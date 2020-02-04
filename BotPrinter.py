@@ -3,7 +3,6 @@ import config
 from telebot import TeleBot, types
 
 bot = TeleBot(config.token)
-status = 0
 
 mainkeyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
 button_help = types.KeyboardButton(text="/help")
@@ -15,29 +14,38 @@ mainkeyboard.add(button_help, button_add, button_list, button_delete)
 
 @bot.message_handler(commands=["start"])
 def start(message):
-    bot.send_message(message.chat.id, "Список команд:", reply_markup=mainkeyboard)
-    config.chat_id = message.chat.id
-    log(message)
+    clear_messages(message)
+    bot.send_message(message.chat.id, "Список команд: ", reply_markup=mainkeyboard)
+    log_msg(message)
 
 
 @bot.message_handler(commands=["help"])
 def help_msg(message):
+    clear_messages(message)
     bot.send_message(message.chat.id, "PrintBot:\n"
                                       "*Інформація*", reply_markup=mainkeyboard)
-    log(message)
+    log_msg(message)
 
 
 @bot.message_handler(commands=["add_file"])
 def addfile(message):
+    clear_messages(message)
     uid = message.from_user.id
     config.prev_message = message
     bot.send_message(message.chat.id, "Скинь файл...")
     bot.register_next_step_handler(message, add_document, uid)
-    log(message)
+    log_msg(message)
 
 
 @bot.message_handler()
 def add_log(message):
+    clear_messages(message)
+    log_msg(message)
+
+
+def log_msg(message):
+    config.prev_message_id = message.message_id
+    print("Message id: " + str(config.prev_message_id))
     log(message)
 
 
@@ -55,6 +63,16 @@ def log(message, text="Сповіщення від"):
     print("###################################################")
 
 
+def clear_messages(message):
+    for i in range(config.numb):
+        try:
+            if config.prev_message_id + i != message.message_id:
+                bot.delete_message(message.chat.id, config.prev_message_id + i)
+        except:
+            pass
+    config.numb = 2
+
+
 def add_document(msg, uid):
     uid_new = msg.from_user.id
     if uid == uid_new:
@@ -63,6 +81,7 @@ def add_document(msg, uid):
         else:
             bot.send_message(msg.chat.id, "\"" + msg.text + "\" - не документ!")
     log(msg, "Надіслав файл")
+    config.numb = 4
 
 
 if __name__ == '__main__':
