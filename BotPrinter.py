@@ -17,12 +17,14 @@ mainkeyboard.add(button_help, button_add, button_list, button_delete)
 def start(message):
     bot.send_message(message.chat.id, "Список команд:", reply_markup=mainkeyboard)
     config.chat_id = message.chat.id
+    log(message)
 
 
 @bot.message_handler(commands=["help"])
 def help_msg(message):
     bot.send_message(message.chat.id, "PrintBot:\n"
                                       "*Інформація*", reply_markup=mainkeyboard)
+    log(message)
 
 
 @bot.message_handler(commands=["add_file"])
@@ -31,6 +33,26 @@ def addfile(message):
     config.prev_message = message
     bot.send_message(message.chat.id, "Скинь файл...")
     bot.register_next_step_handler(message, add_document, uid)
+    log(message)
+
+
+@bot.message_handler()
+def add_log(message):
+    log(message)
+
+
+def log(message, text="Сповіщення від"):
+    print("###################################################")
+    from datetime import datetime
+    if message.content_type != 'text':
+        msg = message.document.file_name
+    else:
+        msg = message.text
+    print(datetime.now())
+    print(text + " {0} {1} (id = {2}) \n{3}".format(message.from_user.first_name,
+                                                    message.from_user.last_name,
+                                                    str(message.from_user.id), msg))
+    print("###################################################")
 
 
 def add_document(msg, uid):
@@ -40,6 +62,7 @@ def add_document(msg, uid):
             bot.send_message(msg.chat.id, msg.document.file_name + " успішно добавлений!", reply_markup=mainkeyboard)
         else:
             bot.send_message(msg.chat.id, "\"" + msg.text + "\" - не документ!")
+    log(msg, "Надіслав файл")
 
 
 if __name__ == '__main__':
